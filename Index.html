@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="sw">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LughaAI — Kenyan Language Assistant</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+
+    .app-wrapper {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .brand-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 4px;
+    }
+    .brand-logo {
+      width: 32px; height: 32px;
+      border-radius: 50%;
+      background: #1D9E75;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .brand-logo svg { width: 18px; height: 18px; fill: #fff; }
+    .brand-name { font-size: 18px; font-weight: 600; color: #1D9E75; }
+    .brand-tag { font-size: 12px; color: #888; margin-left: auto; }
+
+    .phone {
+      background: #fff;
+      border-radius: 20px;
+      box-shadow: 0 2px 20px rgba(0,0,0,0.08);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      height: 620px;
+    }
+
+    .topbar {
+      background: #1D9E75;
+      padding: 13px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+    .av {
+      width: 36px; height: 36px;
+      border-radius: 50%;
+      background: #085041;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 600; color: #9FE1CB;
+      flex-shrink: 0;
+    }
+    .tinfo { flex: 1; }
+    .tname { font-size: 14px; font-weight: 600; color: #fff; }
+    .tstatus { font-size: 10px; color: #9FE1CB; }
+    .tbadge {
+      background: #085041;
+      color: #9FE1CB;
+      font-size: 10px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      font-weight: 600;
+    }
+
+    .api-warning {
+      background: #fff8e1;
+      border-bottom: 1px solid #ffe082;
+      padding: 7px 14px;
+      font-size: 11px;
+      color: #7a5c00;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .api-warning a { color: #1D9E75; text-decoration: none; font-weight: 600; }
+    .api-input-row {
+      display: flex;
+      gap: 6px;
+      padding: 7px 12px;
+      border-bottom: 1px solid #f0f0f0;
+      background: #f9fafb;
+      flex-shrink: 0;
+    }
+    .api-input-row input {
+      flex: 1;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 6px 10px;
+      font-size: 12px;
+      color: #333;
+      outline: none;
+      font-family: monospace;
+    }
+    .api-input-row button {
+      background: #1D9E75;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 12px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .lang-bar {
+      background: #f9fafb;
+      border-bottom: 1px solid #f0f0f0;
+      padding: 7px 12px;
+      display: flex;
+      gap: 5px;
+      overflow-x: auto;
+      flex-shrink: 0;
+    }
+    .lang-bar::-webkit-scrollbar { display: none; }
+    .lchip {
+      font-size: 11px;
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      background: #fff;
+      color: #666;
+      cursor: pointer;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: all 0.15s;
+    }
+    .lchip.active {
+      background: #1D9E75;
+      color: #fff;
+      border-color: #1D9E75;
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 14px 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      background: #f8fffe;
+    }
+
+    .msg { display: flex; flex-direction: column; max-width: 84%; }
+    .msg.bot { align-self: flex-start; }
+    .msg.user { align-self: flex-end; }
+
+    .bubble {
+      padding: 10px 13px;
+      font-size: 13.5px;
+      line-height: 1.5;
+    }
+    .msg.bot .bubble {
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 3px 16px 16px 16px;
+      color: #222;
+    }
+    .msg.user .bubble {
+      background: #1D9E75;
+      color: #fff;
+      border-radius: 16px 3px 16px 16px;
+    }
+
+    .tr-toggle {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 5px;
+      font-size: 11px;
+      color: #0F6E56;
+      background: #E1F5EE;
+      border: none;
+      border-radius: 8px;
+      padding: 3px 9px;
+      cursor: pointer;
+    }
+    .tr-box {
+      margin-top: 5px;
+      background: #E1F5EE;
+      border-left: 2px solid #1D9E75;
+      border-radius: 0 8px 8px 0;
+      padding: 7px 11px;
+      font-size: 12px;
+      color: #0F6E56;
+      line-height: 1.5;
+    }
+    .tr-label {
+      font-size: 9px;
+      font-weight: 700;
+      color: #085041;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 2px;
+    }
+
+    .mtime {
+      font-size: 9px;
+      color: #aaa;
+      margin-top: 3px;
+      padding: 0 3px;
+    }
+    .msg.user .mtime { text-align: right; }
+
+    .typing {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 10px 13px;
+      background: #fff;
+      border: 1px solid #e8e8e8;
+      border-radius: 3px 16px 16px 16px;
+      width: fit-content;
+      align-self: flex-start;
+    }
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: #1D9E75;
+      animation: bop 1.2s infinite;
+    }
+    .dot:nth-child(2) { animation-delay: 0.2s; }
+    .dot:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes bop {
+      0%,60%,100% { transform: translateY(0); opacity: 0.4; }
+      30% { transform: translateY(-5px); opacity: 1; }
+    }
+
+    .feat-strip {
+      border-top: 1px solid #f0f0f0;
+      padding: 7px 12px;
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .fpill {
+      font-size: 11px;
+      padding: 4px 10px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      color: #888;
+      cursor: pointer;
+      background: #fff;
+      transition: all 0.15s;
+    }
+    .fpill.on {
+      background: #E1F5EE;
+      color: #0F6E56;
+      border-color: #1D9E75;
+    }
+
+    .input-row {
+      border-top: 1px solid #f0f0f0;
+      padding: 10px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+      background: #fff;
+    }
+    .cinput {
+      flex: 1;
+      border: 1px solid #e0e0e0;
+      border-radius: 20px;
+      padding: 9px 15px;
+      font-size: 13.5px;
+      background: #f9fafb;
+      color: #222;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.15s;
+    }
+    .cinput:focus { border-color: #1D9E75; }
+    .cinput::placeholder { color: #aaa; }
+    .sendbtn {
+      width: 38px; height: 38px;
+      border-radius: 50%;
+      background: #1D9E75;
+      border: none;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s;
+    }
+    .sendbtn:hover { background: #0F6E56; }
+    .sendbtn:disabled { background: #9FE1CB; cursor: not-allowed; }
+    .sendbtn svg { width: 16px; height: 16px; fill: #fff; }
+
+    .err-msg {
+      background: #fff0f0;
+      border: 1px solid #ffcdd2;
+      border-radius: 10px;
+      padding: 9px 13px;
+      font-size: 12px;
+      color: #c62828;
+      align-self: stretch;
+    }
+
+    .footer {
+      text-align: center;
+      font-size: 11px;
+      color: #aaa;
+      padding: 4px 0;
+    }
+    .footer a { color: #1D9E75; text-decoration: none; }
+
+    @media (max-width: 480px) {
+      body { padding: 0; justify-content: flex-start; }
+      .phone { border-radius: 0; height: 100vh; }
+      .app-wrapper { max-width: 100%; gap: 0; }
+      .brand-row, .footer { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-wrapper">
+  <div class="brand-row">
+    <div class="brand-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z"/></svg>
+    </div>
+    <div class="brand-name">LughaAI</div>
+    <div class="brand-tag">Kenyan Language Assistant</div>
+  </div>
+
+  <div class="phone">
+    <div class="topbar">
+      <div class="av">LA</div>
+      <div class="tinfo">
+        <div class="tname">LughaAI</div>
+        <div class="tstatus" id="statusText">Online · Ready</div>
+      </div>
+      <div class="tbadge" id="langBadge">SW</div>
+    </div>
+
+    <div class="api-warning">
+      ⚠️ Add your Anthropic API key to activate AI.
+      <a href="https://console.anthropic.com/keys" target="_blank">Get one free →</a>
+    </div>
+    <div class="api-input-row">
+      <input type="password" id="apiKey" placeholder="sk-ant-api03-..." />
+      <button onclick="saveKey()">Save</button>
+    </div>
+
+    <div class="lang-bar">
+      <div class="lchip active" onclick="setLang(this,'Swahili','SW','Andika kwa Kiswahili...')">Swahili</div>
+      <div class="lchip" onclick="setLang(this,'Kikuyu','KI','Andika Gikuyu...')">Kikuyu</div>
+      <div class="lchip" onclick="setLang(this,'Luo','LU','Ndiko Dholuo...')">Luo</div>
+      <div class="lchip" onclick="setLang(this,'Kamba','KA','Ndikia Kikamba...')">Kamba</div>
+      <div class="lchip" onclick="setLang(this,'English','EN','Type in English...')">English</div>
+    </div>
+
+    <div class="messages" id="msgs">
+      <div class="msg bot">
+        <div class="bubble">Habari! Mimi ni LughaAI — msaidizi wako wa lugha za Kenya. Unaweza kuniandikia kwa Kiswahili, Kikuyu, Luo, Kamba, au Kiingereza. Pia naweza kutafsiri mazungumzo yetu kwa lugha yoyote duniani! 🌍</div>
+        <button class="tr-toggle" onclick="toggleTr(this, 'Hello! I am LughaAI — your Kenyan language assistant. You can write to me in Swahili, Kikuyu, Luo, Kamba, or English. I can also translate our conversation into any language in the world!')">🌐 Translate</button>
+        <div class="mtime">Now</div>
+      </div>
+    </div>
+
+    <div class="feat-strip">
+      <div class="fpill on" id="autoTranslateBtn" onclick="toggleAutoTranslate()">🌐 Auto-translate ON</div>
+      <div class="fpill" onclick="clearChat()">🗑 Clear chat</div>
+    </div>
+
+    <div class="input-row">
+      <input class="cinput" id="chatInput" placeholder="Andika kwa Kiswahili..." onkeydown="handleKey(event)" />
+      <button class="sendbtn" id="sendBtn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24"><path d="M2 21l21-9L2 3v7l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="footer">
+    Powered by Claude AI &nbsp;·&nbsp; <a href="https://anthropic.com" target="_blank">Anthropic</a>
+  </div>
+</div>
+
+<script>
+  let currentLang = 'Swahili';
+  let autoTranslate = true;
+  let isLoading = false;
+  let conversationHistory = [];
+  let apiKey = localStorage.getItem('lughaai_key') || '';
+
+  if (apiKey) {
+    document.getElementById('apiKey').value = apiKey;
+    hideApiBar();
+  }
+
+  function saveKey() {
+    const val = document.getElementById('apiKey').value.trim();
+    if (!val.startsWith('sk-')) {
+      alert('Please enter a valid Anthropic API key starting with sk-ant-...');
+      return;
+    }
+    apiKey = val;
+    localStorage.setItem('lughaai_key', apiKey);
+    hideApiBar();
+    appendBotMsg('API key saved! Sasa tunaweza kuzungumza. Niambie — ninaweza kukusaidiaje leo?', 'API key saved! Now we can chat. Tell me — how can I help you today?');
+  }
+
+  function hideApiBar() {
+    document.querySelector('.api-warning').style.display = 'none';
+    document.querySelector('.api-input-row').style.display = 'none';
+  }
+
+  const systemPrompt = `You are LughaAI, a warm and helpful Kenyan language AI assistant. You are fluent in Swahili, Kikuyu, Luo, Kamba, and English.
+
+Rules:
+- Always detect the language the user is writing in and respond in the SAME language naturally.
+- Be warm, friendly, and culturally aware of Kenyan culture.
+- Keep responses concise and conversational (2-4 sentences unless asked for more).
+- After your main response, add a blank line then write "TRANSLATION:" followed by an English translation of your response. If you responded in English, provide a Swahili translation instead.
+- If the user asks to translate something to a specific language, do so and label it clearly.
+- You may naturally use Sheng (Swahili-English mix) when it fits.`;
+
+  function setLang(el, lang, badge, placeholder) {
+    document.querySelectorAll('.lchip').forEach(c => c.classList.remove('active'));
+    el.classList.add('active');
+    currentLang = lang;
+    document.getElementById('langBadge').textContent = badge;
+    document.getElementById('chatInput').placeholder = placeholder;
+    document.getElementById('statusText').textContent = 'Online · ' + lang + ' mode';
+  }
+
+  function toggleAutoTranslate() {
+    autoTranslate = !autoTranslate;
+    const btn = document.getElementById('autoTranslateBtn');
+    btn.textContent = autoTranslate ? '🌐 Auto-translate ON' : '🌐 Auto-translate OFF';
+    btn.classList.toggle('on', autoTranslate);
+  }
+
+  function toggleTr(btn, text) {
+    const next = btn.nextElementSibling;
+    if (next && next.classList.contains('tr-box')) {
+      next.remove();
+      btn.textContent = '🌐 Translate';
+    } else {
+      const box = document.createElement('div');
+      box.className = 'tr-box';
+      box.innerHTML = '<div class="tr-label">English</div>' + esc(text);
+      btn.insertAdjacentElement('afterend', box);
+      btn.textContent = '🌐 Hide';
+    }
+  }
+
+  function getTime() {
+    return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  }
+
+  function esc(str) {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function scrollBottom() {
+    const m = document.getElementById('msgs');
+    m.scrollTop = m.scrollHeight;
+  }
+
+  function appendUserMsg(text) {
+    const msgs = document.getElementById('msgs');
+    const div = document.createElement('div');
+    div.className = 'msg user';
+    div.innerHTML = '<div class="bubble">' + esc(text) + '</div><div class="mtime">' + getTime() + '</div>';
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function showTyping() {
+    const msgs = document.getElementById('msgs');
+    const t = document.createElement('div');
+    t.id = 'typing';
+    t.className = 'typing';
+    t.innerHTML = '<div class="dot"></div><div class="dot"></div><div class="dot"></div>';
+    msgs.appendChild(t);
+    scrollBottom();
+  }
+
+  function removeTyping() {
+    const t = document.getElementById('typing');
+    if (t) t.remove();
+  }
+
+  function appendBotMsg(mainText, translation) {
+    const msgs = document.getElementById('msgs');
+    const div = document.createElement('div');
+    div.className = 'msg bot';
+    let html = '<div class="bubble">' + esc(mainText) + '</div>';
+    if (translation) {
+      if (autoTranslate) {
+        html += '<div class="tr-box"><div class="tr-label">Translation</div>' + esc(translation) + '</div>';
+        html += '<button class="tr-toggle" onclick="hideTr(this)">🌐 Hide</button>';
+      } else {
+        const safeText = translation.replace(/'/g, "\\'");
+        html += '<button class="tr-toggle" onclick="revealTr(this,\'' + safeText + '\')">🌐 Translate</button>';
+      }
+    }
+    html += '<div class="mtime">' + getTime() + '</div>';
+    div.innerHTML = html;
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function hideTr(btn) {
+    const box = btn.previousElementSibling;
+    if (!box) return;
+    const hidden = box.style.display === 'none';
+    box.style.display = hidden ? '' : 'none';
+    btn.textContent = hidden ? '🌐 Hide' : '🌐 Translate';
+  }
+
+  function revealTr(btn, text) {
+    const box = document.createElement('div');
+    box.className = 'tr-box';
+    box.innerHTML = '<div class="tr-label">Translation</div>' + esc(text);
+    btn.insertAdjacentElement('beforebegin', box);
+    btn.textContent = '🌐 Hide';
+    btn.setAttribute('onclick', 'hideTr(this)');
+  }
+
+  function appendError(msg) {
+    const msgs = document.getElementById('msgs');
+    const div = document.createElement('div');
+    div.className = 'err-msg';
+    div.textContent = '⚠️ ' + msg;
+    msgs.appendChild(div);
+    scrollBottom();
+  }
+
+  function clearChat() {
+    conversationHistory = [];
+    document.getElementById('msgs').innerHTML =
+      '<div class="msg bot"><div class="bubble">Sawa! Tuanze upya. Ninaweza kukusaidiaje leo?</div><div class="mtime">' + getTime() + '</div></div>';
+  }
+
+  function handleKey(e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+  }
+
+  async function sendMessage() {
+    if (isLoading) return;
+    if (!apiKey) {
+      alert('Please enter your Anthropic API key first.');
+      return;
+    }
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (!text) return;
+
+    input.value = '';
+    isLoading = true;
+    document.getElementById('sendBtn').disabled = true;
+    document.getElementById('statusText').textContent = 'Typing...';
+
+    appendUserMsg(text);
+    conversationHistory.push({ role: 'user', content: text });
+    showTyping();
+
+    try {
+      const res = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+          'anthropic-version': '2023-06-01',
+          'anthropic-dangerous-direct-browser-access': 'true'
+        },
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: conversationHistory
+        })
+      });
+
+      const data = await res.json();
+      removeTyping();
+
+      if (data.error) {
+        appendError(data.error.message);
+      } else {
+        const full = data.content[0].text;
+        const parts = full.split(/\nTRANSLATION:/i);
+        const mainText = parts[0].trim();
+        const translation = parts[1] ? parts[1].trim() : null;
+        conversationHistory.push({ role: 'assistant', content: full });
+        appendBotMsg(mainText, translation);
+      }
+    } catch (err) {
+      removeTyping();
+      appendError('Connection error. Please check your internet and try again.');
+    }
+
+    isLoading = false;
+    document.getElementById('sendBtn').disabled = false;
+    document.getElementById('statusText').textContent = 'Online · ' + currentLang + ' mode';
+    input.focus();
+  }
+</script>
+</body>
+</html>
